@@ -16,11 +16,13 @@ __all__ = (
     "HGStem",
     "SPP",
     "SPPF",
+    "GhostSPPF",#
     "C1",
     "C2",
     "C3",
     "C2f",
     "C2fAttn",
+    "GhostC2f",#
     "ImagePoolingAttn",
     "ContrastiveHead",
     "BNContrastiveHead",
@@ -187,6 +189,30 @@ class SPPF(nn.Module):
         y = [self.cv1(x)]
         y.extend(self.m(y[-1]) for _ in range(3))
         return self.cv2(torch.cat(y, 1))
+    
+    
+
+class GhostSPPF(nn.Module):
+    """Ghost implementation of Spatial Pyramid Pooling - Fast (SPPF)."""
+    
+    def __init__(self, c1, c2, k=5):
+        """Initialize GhostSPPF with Ghost convolutions and SPPF structure.
+        Args:
+            c1 (int): Input channels.
+            c2 (int): Output channels.
+            k (int): Kernel size for max pooling.
+        """
+        super().__init__()
+        c_ = c1 // 2  # Hidden channels
+        self.cv1 = GhostConv(c1, c_, 1, 1)  # Ghost pointwise conv
+        self.cv2 = GhostConv(c_ * 4, c2, 1, 1)  # Final Ghost conv
+        self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
+    
+    def forward(self, x):
+        """Forward pass through GhostSPPF layer."""
+        y = [self.cv1(x)]
+        y.extend(self.m(y[-1]) for _ in range(3))
+        return self.cv2(torch.cat(y, 1))
 
 
 class C1(nn.Module):
@@ -245,6 +271,39 @@ class C2f(nn.Module):
         y = [y[0], y[1]]
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
+    
+    
+
+class GhostC2f(nn.Module):
+    """Ghost implementation of CSP Bottleneck with 2 convolutions."""
+    
+    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
+        """Initialize GhostC2f with Ghost convolutions and CSP structure.
+        Args:
+            c1 (int): Input channels.
+            c2 (int): Output channels.
+            n (int): Number of GhostBottleneck blocks.
+            shortcut (bool): Whether to use shortcut connections.
+            g (int): Number of groups (for grouped convolution, unused in Ghost modules).
+            e (float): Expansion ratio for hidden channels.
+        """
+        super().__init__()
+        self.c = int(c2 * e)  # Hidden channels
+        self.cv1 = GhostConv(c1, 2 * self.c, 1, 1)  # Ghost pointwise conv
+        self.cv2 = GhostConv((2 + n) * self.c, c2, 1)  # Final Ghost conv
+        self.m = nn.ModuleList(GhostBottleneck(self.c, self.c, shortcut=shortcut) for _ in range(n))
+    
+    def forward(self, x):
+        """Forward pass through GhostC2f layer."""
+        y = list(self.cv1(x).chunk(2, 1))  # Split into two parts
+        y.extend(m(y[-1]) for m in self.m)  # Apply GhostBottleneck layers
+        return self.cv2(torch.cat(y, 1))  # Concatenate and pass through GhostConv
+    
+    def forward_split(self, x):
+        """Alternative forward pass using split() instead of chunk()."""
+        y = list(self.cv1(x).split((self.c, self.c), 1))  # Split input into two parts
+        y.extend(m(y[-1]) for m in self.m)  # Apply GhostBottleneck layers
+        return self.cv2(torch.cat(y, 1))  # Concatenate and process with GhostConv
 
 
 class C3(nn.Module):

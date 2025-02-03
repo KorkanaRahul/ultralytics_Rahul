@@ -30,6 +30,7 @@ from .block import (
     SPP,
     SPPELAN,
     SPPF,
+    GhostSPPF,#
     AConv,
     ADown,
     Attention,
@@ -38,6 +39,7 @@ from .block import (
     BottleneckCSP,
     C2f,
     C2fAttn,
+    GhostC2f,#
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -111,10 +113,12 @@ __all__ = (
     "HGStem",
     "SPP",
     "SPPF",
+    "GhostSPPF",#
     "C1",
     "C2",
     "C3",
     "C2f",
+    "GhostC2f",#
     "C3k2",
     "SCDown",
     "C2fPSA",

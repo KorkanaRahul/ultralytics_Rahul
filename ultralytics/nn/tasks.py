@@ -24,12 +24,14 @@ from ultralytics.nn.modules import (
     SPP,
     SPPELAN,
     SPPF,
+    GhostSPPF,#
     AConv,
     ADown,
     Bottleneck,
     BottleneckCSP,
     C2f,
     C2fAttn,
+    GhostC2f,#
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -964,6 +966,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             GhostBottleneck,
             SPP,
             SPPF,
+            GhostSPPF,#
             C2fPSA,
             C2PSA,
             DWConv,
@@ -972,6 +975,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C1,
             C2,
             C2f,
+            GhostC2f,#
             C3k2,
             RepNCSPELAN4,
             ELAN1,
@@ -997,6 +1001,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C1,
             C2,
             C2f,
+            GhostC2f,#
             C3k2,
             C2fAttn,
             C3,
