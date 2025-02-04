@@ -19,6 +19,7 @@ from ultralytics.nn.modules import (
     C3,
     C3TR,
     ELAN1,
+    DFL,#
     OBB,
     PSA,
     SPP,
@@ -961,6 +962,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             Classify,
             Conv,
             ConvTranspose,
+            DFL,
             GhostConv,
             Bottleneck,
             GhostBottleneck,
@@ -1002,6 +1004,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2,
             C2f,
             GhostC2f,#
+            DFL,#
             C3k2,
             C2fAttn,
             C3,
