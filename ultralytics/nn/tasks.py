@@ -93,6 +93,8 @@ from ultralytics.utils.torch_utils import (
 )
 
 
+print("Available globals:", globals().keys())
+
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
 
