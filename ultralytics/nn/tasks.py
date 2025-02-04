@@ -939,6 +939,10 @@ def attempt_load_one_weight(weight, device=None, inplace=True, fuse=False):
 def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
     """Parse a YOLO model.yaml dictionary into a PyTorch model."""
     import ast
+    
+    print("Available globals:", globals().keys())
+    globals()["DFL"] = DFL
+    print("Available globals:", globals().keys())
 
     # Args
     legacy = True  # backward compatibility for v3/v5/v8/v9 models
