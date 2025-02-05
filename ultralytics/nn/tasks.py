@@ -1012,7 +1012,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2,
             C2f,
             GhostC2f,#
-            DFL,#
+            # DFL,#
             C3k2,
             C2fAttn,
             C3,
