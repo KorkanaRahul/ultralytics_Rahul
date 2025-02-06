@@ -970,7 +970,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             Classify,
             Conv,
             ConvTranspose,
-            DFL,
+            # DFL,
             GhostConv,
             Bottleneck,
             GhostBottleneck,
@@ -1047,8 +1047,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 args[2] = int(max(round(min(args[2], max_channels // 2 // 32)) * width, 1) if args[2] > 1 else args[2])
 
             args = [c1, c2, *args[1:]]
-            if m is DFL:
-                c1=ch[f]
             if m in repeat_modules:
                 args.insert(2, n)  # number of repeats
                 n = 1
@@ -1056,6 +1054,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 legacy = False
                 if scale in "mlx":
                     args[3] = True
+        elif m is DFL:
+            c1=ch[f]
         elif m is AIFI:
             args = [ch[f], *args]
         elif m in frozenset({HGStem, HGBlock}):
