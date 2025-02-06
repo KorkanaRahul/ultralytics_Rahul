@@ -338,9 +338,11 @@ class DetectionModel(BaseModel):
             #         return self.forward(x)["one2many"]
             #     return self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
             def _forward(x):
-                print(f"Input shape before layer: {x.shape}")
-                return self.forward(x)
-
+                print(f"Input shape at start: {x.shape}")
+                for i, layer in enumerate(self.model):
+                     x = layer(x)
+                     print(f"Layer {i}: {layer.__class__.__name__} -> Output shape: {x.shape}")
+                return x
             m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
             m.bias_init()  # only run once
