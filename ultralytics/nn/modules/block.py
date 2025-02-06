@@ -273,32 +273,30 @@ class C2f(nn.Module):
         return self.cv2(torch.cat(y, 1))
     
     
-
 class GhostC2f(nn.Module):
     """Ghost implementation of CSP Bottleneck with 2 convolutions."""
     
-    def __init__(self, c1, c2, n=1, g=1, e=0.5,s=1):
-        """Initialize GhostC2f with Ghost convolutions and CSP structure.
+    def __init__(self, c1, c2, n=1, g=1, e=0.5, shortcut=False):
+        """
         Args:
             c1 (int): Input channels.
             c2 (int): Output channels.
             n (int): Number of GhostBottleneck blocks.
-            shortcut (bool): Whether to use shortcut connections.
-            g (int): Number of groups (for grouped convolution, unused in Ghost modules).
-            e (float): Expansion ratio for hidden channels.
+            shortcut (bool): Enable shortcut connections selectively.
+            g (int): Number of groups (unused here).
+            e (float): Expansion ratio.
         """
-        print(s)
         super().__init__()
         self.c = int(c2 * e)  # Hidden channels
-        self.cv1 = GhostConv(c1, 2 * self.c, 1, 1)  # Ghost pointwise conv
-        self.cv2 = GhostConv((2 + n) * self.c, c2, 1)  # Final Ghost conv
-        self.m = nn.ModuleList(GhostBottleneck(self.c, self.c, s) for _ in range(n))
+        self.cv1 = GhostConv(c1, 2 * self.c, 1, 1)  # First Ghost Conv
+        self.cv2 = GhostConv((2 + n) * self.c, c2, 1)  # Final Ghost Conv
+        self.m = nn.ModuleList(GhostBottleneck(self.c, self.c, use_shortcut=shortcut) for _ in range(n))  # Conditional shortcut
     
     def forward(self, x):
-        """Forward pass through GhostC2f layer."""
+        """Forward pass through GhostC2f layer with optional shortcut."""
         y = list(self.cv1(x).chunk(2, 1))  # Split into two parts
         y.extend(m(y[-1]) for m in self.m)  # Apply GhostBottleneck layers
-        return self.cv2(torch.cat(y, 1))  # Concatenate and pass through GhostConv
+        return self.cv2(torch.cat(y, 1))  # Concatenate and pass through final GhostConv
     
     def forward_split(self, x):
         """Alternative forward pass using split() instead of chunk()."""
@@ -372,24 +370,25 @@ class C3Ghost(C3):
 
 
 class GhostBottleneck(nn.Module):
-    """Ghost Bottleneck https://github.com/huawei-noah/ghostnet."""
-
-    def __init__(self, c1, c2, k=3, s=1):
-        """Initializes GhostBottleneck module with arguments ch_in, ch_out, kernel, stride."""
+    """Ghost Bottleneck with optional shortcut"""
+    
+    def __init__(self, c1, c2, k=3, s=1, use_shortcut=False):
         super().__init__()
-        c_ = c2 // 2
+        c_ = c2 // 2  # Reduced feature channels
         self.conv = nn.Sequential(
-            GhostConv(c1, c_, 1, 1),  # pw
-            DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
-            GhostConv(c_, c2, 1, 1, act=False),  # pw-linear
+            GhostConv(c1, c_, 1, 1),  # Pointwise Ghost Convolution
+            DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # Depthwise conv if downsampling
+            GhostConv(c_, c2, 1, 1, act=False),  # Final Ghost Conv
         )
+        # Enable shortcut only if `use_shortcut` is True
         self.shortcut = (
-            nn.Sequential(DWConv(c1, c1, k, s, act=False), Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
+            nn.Sequential(
+                GhostConv(c1, c2, 1, 1, act=False)  # GhostConv for shortcut
+            ) if use_shortcut else nn.Identity()
         )
 
     def forward(self, x):
-        """Applies skip connection and concatenation to input tensor."""
-        return self.conv(x) + self.shortcut(x)
+        return self.conv(x) + self.shortcut(x)  # Apply shortcut only if enabled
 
 
 class Bottleneck(nn.Module):

@@ -331,7 +331,6 @@ class DetectionModel(BaseModel):
         if isinstance(m, Detect):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
             s = 256  # 2x min stride
             m.inplace = self.inplace
-            
             def _forward(x):
                 """Performs a forward pass through the model, handling different Detect subclass types accordingly."""
                 if self.end2end:
