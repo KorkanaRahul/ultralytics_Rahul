@@ -292,6 +292,7 @@ class GhostC2f(nn.Module):
         self.cv1 = GhostConv(c1, 2 * self.c, 1, 1)  # Ghost pointwise conv
         self.cv2 = GhostConv((2 + n) * self.c, c2, 1)  # Final Ghost conv
         if shortcut==True : 
+            print("shortcut enabled")
             self.s=2
         self.m = nn.ModuleList(GhostBottleneck(self.c, self.c, self.s) for _ in range(n))
     
