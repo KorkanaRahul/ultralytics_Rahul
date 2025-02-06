@@ -346,7 +346,7 @@ class DetectionModel(BaseModel):
                     except Exception as e:
                         print(f"Error in Layer {i} ({layer.__class__.__name__}): {e}")
                         break  # Stop execution when error occurs
-            return x
+                return x
 
             m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
