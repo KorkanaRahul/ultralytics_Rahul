@@ -289,6 +289,8 @@ class GhostC2f(nn.Module):
         """
         super().__init__()
         self.c = int(c2 * e)  # Hidden channels
+        if c1==128:
+            print("c1 = 128 ")
         self.cv1 = GhostConv(c1, 2 * self.c, 1, 1)  # Ghost pointwise conv
         self.cv2 = GhostConv((2 + n) * self.c, c2, 1)  # Final Ghost conv
         if shortcut==True : 
