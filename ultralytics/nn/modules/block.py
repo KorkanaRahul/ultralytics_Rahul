@@ -277,11 +277,7 @@ class C2f(nn.Module):
 class GhostC2f(nn.Module):
     """Ghost implementation of CSP Bottleneck with 2 convolutions."""
     
-<<<<<<< HEAD
     def __init__(self, c1, c2, n=1, g=1, e=0.5,s=1):
-=======
-    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
->>>>>>> parent of 1848e1b0 (remove shortcut from ghostc2f)
         """Initialize GhostC2f with Ghost convolutions and CSP structure.
         Args:
             c1 (int): Input channels.
@@ -291,15 +287,12 @@ class GhostC2f(nn.Module):
             g (int): Number of groups (for grouped convolution, unused in Ghost modules).
             e (float): Expansion ratio for hidden channels.
         """
+        print(s)
         super().__init__()
         self.c = int(c2 * e)  # Hidden channels
         self.cv1 = GhostConv(c1, 2 * self.c, 1, 1)  # Ghost pointwise conv
         self.cv2 = GhostConv((2 + n) * self.c, c2, 1)  # Final Ghost conv
-<<<<<<< HEAD
-        self.m = nn.ModuleList(GhostBottleneck(self.c, self.c, self.s) for _ in range(n))
-=======
-        self.m = nn.ModuleList(GhostBottleneck(self.c, self.c, shortcut=shortcut) for _ in range(n))
->>>>>>> parent of 1848e1b0 (remove shortcut from ghostc2f)
+        self.m = nn.ModuleList(GhostBottleneck(self.c, self.c, s) for _ in range(n))
     
     def forward(self, x):
         """Forward pass through GhostC2f layer."""
