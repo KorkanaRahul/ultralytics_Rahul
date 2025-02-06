@@ -331,7 +331,7 @@ class DetectionModel(BaseModel):
         if isinstance(m, Detect):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
             s = 256  # 2x min stride
             m.inplace = self.inplace
-
+            print(f"Configured input channels: {self.yaml['ch']}")
             # def _forward(x):
             #     """Performs a forward pass through the model, handling different Detect subclass types accordingly."""
             #     if self.end2end:
@@ -340,9 +340,14 @@ class DetectionModel(BaseModel):
             def _forward(x):
                 print(f"Input shape at start: {x.shape}")
                 for i, layer in enumerate(self.model):
-                     x = layer(x)
-                     print(f"Layer {i}: {layer.__class__.__name__} -> Output shape: {x.shape}")
-                return x
+                    try:
+                        x = layer(x)
+                        print(f"Layer {i}: {layer.__class__.__name__} -> Output shape: {x.shape}")
+                    except Exception as e:
+                        print(f"Error in Layer {i} ({layer.__class__.__name__}): {e}")
+                        break  # Stop execution when error occurs
+            return x
+
             m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
             m.bias_init()  # only run once
