@@ -286,7 +286,7 @@ class GhostC2f(nn.Module):
             g (int): Number of groups (unused here).
             e (float): Expansion ratio.
         """
-        print(shortcut)
+        print(f"GhostC2f initialized with: c1={c1}, c2={c2}, n={n}, shortcut={shortcut}")  # Debug print
         super().__init__()
         self.c = int(c2 * e)  # Hidden channels
         self.cv1 = GhostConv(c1, 2 * self.c, 1, 1)  # First Ghost Conv
