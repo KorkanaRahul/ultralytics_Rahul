@@ -33,6 +33,7 @@ from ultralytics.nn.modules import (
     C2f,
     C2fAttn,
     GhostC2f,#
+    GhostC2fskip,
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -985,6 +986,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2,
             C2f,
             GhostC2f,#
+            GhostC2fskip,
             C3k2,
             RepNCSPELAN4,
             ELAN1,
@@ -1011,6 +1013,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2,
             C2f,
             GhostC2f,#
+            GhostC2fskip,
             # DFL,#
             C3k2,
             C2fAttn,
@@ -1046,7 +1049,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 args[2] = int(max(round(min(args[2], max_channels // 2 // 32)) * width, 1) if args[2] > 1 else args[2])
 
             args = [c1, c2, *args[1:]]
-            
+
             if m in repeat_modules:
                 args.insert(2, n)  # number of repeats
                 n = 1

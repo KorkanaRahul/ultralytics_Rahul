@@ -40,6 +40,7 @@ from .block import (
     C2f,
     C2fAttn,
     GhostC2f,#
+    GhostC2fskip,
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -119,6 +120,7 @@ __all__ = (
     "C3",
     "C2f",
     "GhostC2f",#
+    "GhostC2fskip",
     "C3k2",
     "SCDown",
     "C2fPSA",
