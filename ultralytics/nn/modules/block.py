@@ -23,7 +23,8 @@ __all__ = (
     "C2f",
     "C2fAttn",
     "GhostC2f",#
-    "GhostC2fskip"
+    "GhostC2fskip",#
+    "SEBlock",#
     "ImagePoolingAttn",
     "ContrastiveHead",
     "BNContrastiveHead",
@@ -305,6 +306,22 @@ class GhostC2fskip(nn.Module):
         y.extend(m(y[-1]) for m in self.m)  # Apply GhostBottleneck layers
         return self.cv2(torch.cat(y, 1))  # Concatenate and process with GhostConv
 
+class SEBlock(nn.Module):
+    def _init_(self, channel, reduction=16):
+        super(SEBlock, self)._init_()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(channel, channel // reduction),
+            nn.ReLU(inplace=True),
+            nn.Linear(channel // reduction, channel),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        return x * y
 
 class GhostC2f(nn.Module):
     """Ghost implementation of CSP Bottleneck with 2 convolutions."""

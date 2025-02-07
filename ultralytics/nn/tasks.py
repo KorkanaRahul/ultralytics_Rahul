@@ -33,7 +33,8 @@ from ultralytics.nn.modules import (
     C2f,
     C2fAttn,
     GhostC2f,#
-    GhostC2fskip,
+    GhostC2fskip,#
+    SEBlock,#
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -986,7 +987,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2,
             C2f,
             GhostC2f,#
-            GhostC2fskip,
+            GhostC2fskip,#
+            SEBlock,#
             C3k2,
             RepNCSPELAN4,
             ELAN1,
@@ -1013,7 +1015,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2,
             C2f,
             GhostC2f,#
-            GhostC2fskip,
+            GhostC2fskip,#
+            SEBlock,#
             # DFL,#
             C3k2,
             C2fAttn,
