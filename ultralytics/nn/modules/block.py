@@ -276,7 +276,7 @@ class C2f(nn.Module):
 class GhostC2f(nn.Module):
     """Ghost implementation of CSP Bottleneck with 2 convolutions."""
     
-    def __init__(self, c1, c2, n=1, g=1, e=0.5, shortcut=False):
+    def __init__(self, c1, c2, n=1, g=1, e=0.5, shortcut=True):
         """
         Args:
             c1 (int): Input channels.
