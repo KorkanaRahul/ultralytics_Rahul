@@ -1047,7 +1047,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
 
             args = [c1, c2, *args[1:]]
 
-            if m is GhostC2f and len(args) >= 3:
+            if m is GhostC2f and len(args) >= 2:
                 shortcut_flag = args[-1]
                 if isinstance(shortcut_flag, str):  # If it's a string, convert it properly
                     shortcut_flag = shortcut_flag.lower() in ['true', '1']
