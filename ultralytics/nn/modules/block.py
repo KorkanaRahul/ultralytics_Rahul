@@ -308,7 +308,7 @@ class GhostC2fskip(nn.Module):
 
 class SEBlock(nn.Module):
     def __init__(self, channel, reduction=16):
-        super(SEBlock, self)._init__()
+        super(SEBlock, self).__init__()
         self.avg_pool = nn.Ada_ptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Linear(channel, channel // reduction),
