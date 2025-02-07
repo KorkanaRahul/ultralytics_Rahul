@@ -307,9 +307,9 @@ class GhostC2fskip(nn.Module):
         return self.cv2(torch.cat(y, 1))  # Concatenate and process with GhostConv
 
 class SEBlock(nn.Module):
-    def _init_(self, channel, reduction=16):
-        super(SEBlock, self)._init_()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+    def __init__(self, channel, reduction=16):
+        super(SEBlock, self)._init__()
+        self.avg_pool = nn.Ada_ptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Linear(channel, channel // reduction),
             nn.ReLU(inplace=True),
