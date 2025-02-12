@@ -249,7 +249,7 @@ scales: # model compound scaling constants, i.e. 'model=yolov8n.yaml' will call 
 
 
 
-
+# PASS working but it has Very high GLOPS 43.2 with 299 layers  
 # high-accuracy model
 # Backbone:
   # Use CBAM for channel and spatial attention.
