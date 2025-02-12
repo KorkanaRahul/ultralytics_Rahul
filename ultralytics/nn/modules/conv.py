@@ -331,6 +331,7 @@ class Concat(nn.Module):
     def forward(self, x):
         """Forward pass for the YOLOv8 mask Proto module."""
         print("Feature map shapes before concatenation:", [t.shape for t in x])
+        print(f"Layer {i} output shape: {x.shape}")
         return torch.cat(x, self.d)
 
 
