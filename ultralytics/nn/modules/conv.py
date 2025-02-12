@@ -102,7 +102,7 @@ class LightConv(nn.Module):
 class DWConv(Conv):
     """Depth-wise convolution."""
 
-    def __init__(self, c1, c2, k=3, s=1, d=1, act=True):  # ch_in, ch_out, kernel, stride, dilation, activation
+    def __init__(self, c1, c2, k=1, s=1, d=1, act=True):  # ch_in, ch_out, kernel, stride, dilation, activation
         """Initialize Depth-wise convolution with given parameters."""
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), d=d, act=act)
 
@@ -293,10 +293,10 @@ class ChannelAttention(nn.Module):
 class SpatialAttention(nn.Module):
     """Spatial-attention module."""
 
-    def __init__(self, kernel_size=3):
+    def __init__(self, kernel_size=7):
         """Initialize Spatial-attention module with kernel size argument."""
         super().__init__()
-        # assert kernel_size in {3}, "kernel size must be 3 or 7"
+        assert kernel_size in {3, 7}, "kernel size must be 3 or 7"
         padding = 3 if kernel_size == 7 else 1
         self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
         self.act = nn.Sigmoid()
@@ -319,8 +319,6 @@ class CBAM(nn.Module):
         """Applies the forward pass through C1 module."""
         return self.spatial_attention(self.channel_attention(x))
 
-import torch.nn.functional as F
-import torch.nn as nn
 
 class Concat(nn.Module):
     """Concatenate a list of tensors along dimension."""
@@ -332,23 +330,6 @@ class Concat(nn.Module):
 
     def forward(self, x):
         """Forward pass for the YOLOv8 mask Proto module."""
-        print("Feature map shapes before concatenation:", [t.shape for t in x])
-
-        # Resize second tensor if needed
-        target_size = x[0].shape[-2:]
-        x[1] = F.interpolate(x[1], size=target_size, mode="bilinear", align_corners=False)
-
-        print("Feature map shapes after fixing:", [t.shape for t in x])
-
-        # Debug before convolution
-        for i, t in enumerate(x):
-            print(f"Layer {i} output shape before conv: {t.shape}")
-
-        # Debugging Conv2D layers
-        for layer in self.modules():
-            if isinstance(layer, nn.Conv2d):
-                print(f"Conv Layer: in_channels={layer.in_channels}, out_channels={layer.out_channels}, kernel_size={layer.kernel_size}")
-            
         return torch.cat(x, self.d)
 
 
