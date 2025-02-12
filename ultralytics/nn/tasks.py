@@ -36,6 +36,7 @@ from ultralytics.nn.modules import (
     GhostC2fskip,#
     SEBlock,#
     CBAM,#
+    ContrastiveHead,#
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -989,6 +990,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2f,
             GhostC2f,#
             GhostC2fskip,#
+            ContrastiveHead,#
             SEBlock,#
             CBAM,#
             C3k2,
