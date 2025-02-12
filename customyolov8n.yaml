@@ -190,6 +190,7 @@ head:
   - [-1, 1, CBAM, [256]]  # Apply CBAM for refined small-scale features
 
   - [-1, 1, DWConv, [256, 3, 2]]  # Depthwise Convolution for efficient downsampling
+  - [-1, 1, DWConv, [256, 3, 2]]  # Depthwise Convolution for efficient downsampling
   - [[-1, 12], 1, Concat, [1]]  # cat head P4
   - [-1, 3, GhostC2f, [512]]  # 18: Ghost Convolutions for medium-scale features (P4/16-medium)
   - [-1, 1, CBAM, [512]]  # Apply CBAM for better feature fusion
