@@ -102,7 +102,7 @@ class LightConv(nn.Module):
 class DWConv(Conv):
     """Depth-wise convolution."""
 
-    def __init__(self, c1, c2, k=1, s=1, d=1, act=True):  # ch_in, ch_out, kernel, stride, dilation, activation
+    def __init__(self, c1, c2, k=3, s=1, d=1, act=True):  # ch_in, ch_out, kernel, stride, dilation, activation
         """Initialize Depth-wise convolution with given parameters."""
         super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), d=d, act=act)
 
@@ -320,6 +320,7 @@ class CBAM(nn.Module):
         return self.spatial_attention(self.channel_attention(x))
 
 import torch.nn.functional as F
+import torch.nn as nn
 
 class Concat(nn.Module):
     """Concatenate a list of tensors along dimension."""
@@ -342,6 +343,11 @@ class Concat(nn.Module):
         # Debug before convolution
         for i, t in enumerate(x):
             print(f"Layer {i} output shape before conv: {t.shape}")
+
+        # Debugging Conv2D layers
+        for layer in self.modules():
+            if isinstance(layer, nn.Conv2d):
+                print(f"Conv Layer: in_channels={layer.in_channels}, out_channels={layer.out_channels}, kernel_size={layer.kernel_size}")
             
         return torch.cat(x, self.d)
 
