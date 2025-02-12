@@ -181,7 +181,7 @@ backbone:
 head:
   - [-1, 1, nn.Upsample, [None, 2, "bilinear"]]
   - [[-1, 6], 1, Concat, [1]]  # cat backbone P4
-  - [-1, 3, GhostC2f, [512]]  # 12: Ghost Convolutions for lightweight feature processing
+  - [-1, 3, GhostC2f, [512,3]]  # 12: Ghost Convolutions for lightweight feature processing
   - [-1, 1, CBAM, [512]]  # Apply CBAM before moving to smaller scales
 
   - [-1, 1, nn.Upsample, [None, 2, "bilinear"]]
@@ -195,7 +195,7 @@ head:
   - [-1, 3, GhostC2f, [512, 3]]  # Set kernel size to 3 instead of using the channel count
   - [-1, 1, CBAM, [512]]  # Apply CBAM for better feature fusion
 
-  - [-1, 1, DWConv, [512, 3, 2]]  # Depthwise Convolution for efficient downsampling
+  - [-1, 1, DWConv, [512, 3, 1]]  # Depthwise Convolution for efficient downsampling
   - [[-1, 9], 1, Concat, [1]]  # cat head P5
   - [-1, 3, GhostC2f, [1024,3]]  # 21: Ghost Convolutions for large-scale features (P5/32-large)
   - [-1, 1, CBAM, [1024]]  # Apply CBAM for better large-object detection
