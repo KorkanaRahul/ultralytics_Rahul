@@ -289,6 +289,7 @@ class ChannelAttention(nn.Module):
         """Applies forward pass using activation on convolutions of the input, optionally using batch normalization."""
         return x * self.act(self.fc(self.pool(x)))
 
+import torch.nn.functional as F
 
 class SpatialAttention(nn.Module):
     """Spatial-attention module."""
@@ -298,12 +299,21 @@ class SpatialAttention(nn.Module):
         super().__init__()
         # assert kernel_size in {3, 7}, "kernel size must be 3 or 7"
         padding = 3 if kernel_size == 7 else 1
-        self.cv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
+        self.cv1 = nn.Conv2d(2, 1, kernel_size=3, padding=1, bias=False)
         self.act = nn.Sigmoid()
 
     def forward(self, x):
         """Apply channel and spatial attention on input for feature recalibration."""
-        return x * self.act(self.cv1(torch.cat([torch.mean(x, 1, keepdim=True), torch.max(x, 1, keepdim=True)[0]], 1)))
+        avg_x = torch.mean(x, 1, keepdim=True)  # Compute mean
+        max_x = torch.max(x, 1, keepdim=True)[0]  # Compute max
+        
+        attn_input = torch.cat([avg_x, max_x], 1)  # Concatenate along channel dim
+        attn_output = self.act(self.cv1(attn_input))  # Pass through Conv + Sigmoid
+        
+        # Resize attention map to match `x`
+        attn_output = F.interpolate(attn_output, size=x.shape[-2:], mode="bilinear", align_corners=False)
+
+        return x * attn_output  # Ensure element-wise multiplication works
 
 
 class CBAM(nn.Module):
