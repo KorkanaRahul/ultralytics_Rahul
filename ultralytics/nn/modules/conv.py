@@ -319,6 +319,7 @@ class CBAM(nn.Module):
         """Applies the forward pass through C1 module."""
         return self.spatial_attention(self.channel_attention(x))
 
+import torch.nn.functional as F
 
 class Concat(nn.Module):
     """Concatenate a list of tensors along dimension."""
