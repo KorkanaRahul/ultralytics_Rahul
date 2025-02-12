@@ -761,7 +761,10 @@ class RepNCSPELAN4(nn.Module):
 class ELAN1(RepNCSPELAN4):
     """ELAN1 module with 4 convolutions."""
 
-    def __init__(self, c1, c2, c3, c4):
+    def __init__(self, c1, c2, c3=None, c4=None):
+        """Initializes ELAN1 layer with default values for c3 and c4 if not provided."""
+        c3 = c3 or c2  # Default to c2 if not provided
+        c4 = c4 or c3  # Default to c3 if not provided
         """Initializes ELAN1 layer with specified channel sizes."""
         super().__init__(c1, c2, c3, c4)
         self.c = c3 // 2
