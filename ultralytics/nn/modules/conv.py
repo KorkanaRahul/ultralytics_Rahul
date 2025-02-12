@@ -340,6 +340,13 @@ class Concat(nn.Module):
 
     def forward(self, x):
         """Forward pass for the YOLOv8 mask Proto module."""
+        # Get target size (use the smallest feature map)
+        target_size = x[0].shape[-2:]  # (H, W)
+
+        # Resize mismatched feature maps
+        x = [F.interpolate(t, size=target_size, mode="bilinear", align_corners=False) if t.shape[-2:] != target_size else t for t in x]
+
+        print("Feature map shapes after resizing:", [t.shape for t in x])
         return torch.cat(x, self.d)
 
 
