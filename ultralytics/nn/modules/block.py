@@ -673,7 +673,7 @@ class ImagePoolingAttn(nn.Module):
 class ContrastiveHead(nn.Module):
     """Implements contrastive learning head for region-text similarity in vision-language models."""
 
-    def __init__(self):
+    def __init__(self, c_in=None, c_out=None):
         """Initializes ContrastiveHead with specified region-text similarity parameters."""
         super().__init__()
         # NOTE: use -10.0 to keep the init cls loss consistency with other losses
