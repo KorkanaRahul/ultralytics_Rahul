@@ -669,23 +669,31 @@ class ImagePoolingAttn(nn.Module):
         x = self.proj(x.reshape(bs, -1, self.ec))
         return x * self.scale + text
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 class ContrastiveHead(nn.Module):
-    """Implements contrastive learning head for region-text similarity in vision-language models."""
+    """Contrastive learning head for region-text similarity."""
 
     def __init__(self, c_in=None, c_out=None):
-        """Initializes ContrastiveHead with specified region-text similarity parameters."""
         super().__init__()
-        # NOTE: use -10.0 to keep the init cls loss consistency with other losses
         self.bias = nn.Parameter(torch.tensor([-10.0]))
         self.logit_scale = nn.Parameter(torch.ones([]) * torch.tensor(1 / 0.07).log())
+        
+        # Initialize `w` as a learnable parameter if it’s not provided externally
+        self.w = nn.Parameter(torch.randn(1, c_out, c_in))  # Ensure proper shape
 
-    def forward(self, x, w):
+    def forward(self, x, w=None):
         """Forward function of contrastive learning."""
         x = F.normalize(x, dim=1, p=2)
-        w = F.normalize(w, dim=-1, p=2)
+        
+        # Use the provided `w`, or default to the learnable parameter
+        w = F.normalize(w if w is not None else self.w, dim=-1, p=2)
+
         x = torch.einsum("bchw,bkc->bkhw", x, w)
         return x * self.logit_scale.exp() + self.bias
+
 
 
 class BNContrastiveHead(nn.Module):
