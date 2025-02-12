@@ -676,22 +676,24 @@ import torch.nn.functional as F
 class ContrastiveHead(nn.Module):
     """Contrastive learning head for region-text similarity."""
 
-    def __init__(self, c_in=None, c_out=None):
+    def __init__(self, c_in=512, c_out=512):  # Use default values to avoid issues
         super().__init__()
         self.bias = nn.Parameter(torch.tensor([-10.0]))
         self.logit_scale = nn.Parameter(torch.ones([]) * torch.tensor(1 / 0.07).log())
-        
-        # Initialize `w` as a learnable parameter if it’s not provided externally
-        self.w = nn.Parameter(torch.randn(1, c_out, c_in))  # Ensure proper shape
+
+        # Create a learnable weight matrix if `w` is not explicitly provided
+        self.w = nn.Parameter(torch.randn(1, c_out, c_in))  
 
     def forward(self, x, w=None):
         """Forward function of contrastive learning."""
-        x = F.normalize(x, dim=1, p=2)
-        
-        # Use the provided `w`, or default to the learnable parameter
-        w = F.normalize(w if w is not None else self.w, dim=-1, p=2)
+        x = F.normalize(x, dim=1, p=2)  # Normalize input
 
-        x = torch.einsum("bchw,bkc->bkhw", x, w)
+        # If `w` is not passed, use the learnable parameter
+        if w is None:
+            w = self.w  
+
+        w = F.normalize(w, dim=-1, p=2)  # Normalize w
+        x = torch.einsum("bchw,bkc->bkhw", x, w)  # Compute similarity
         return x * self.logit_scale.exp() + self.bias
 
 
