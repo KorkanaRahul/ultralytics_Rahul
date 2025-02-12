@@ -332,13 +332,17 @@ class Concat(nn.Module):
     def forward(self, x):
         """Forward pass for the YOLOv8 mask Proto module."""
         print("Feature map shapes before concatenation:", [t.shape for t in x])
-        for idx, t in enumerate(x):
-            print(f"Layer {idx} output shape: {t.shape}")
-        # Resize the second tensor to match the first tensor's size (16x16)
-        x[1] = F.interpolate(x[1], size=(16, 16), mode="bilinear", align_corners=False)
-        # Debugging
-        print(f"Feature map shapes after fixing: {[t.shape for t in x]}")
-        
+
+        # Resize second tensor if needed
+        target_size = x[0].shape[-2:]
+        x[1] = F.interpolate(x[1], size=target_size, mode="bilinear", align_corners=False)
+
+        print("Feature map shapes after fixing:", [t.shape for t in x])
+
+        # Debug before convolution
+        for i, t in enumerate(x):
+            print(f"Layer {i} output shape before conv: {t.shape}")
+            
         return torch.cat(x, self.d)
 
 
