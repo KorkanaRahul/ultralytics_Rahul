@@ -121,38 +121,38 @@ scales: # model compound scaling constants, i.e. 'model=yolov8n.yaml' will call 
 
 # PASS
 # # DW + Ghost
-# backbone:
-#   # [from, repeats, module, args]
-#   - [-1, 1, DWConv, [64, 3, 2]] # 0-P1/2: Depthwise Convolution for lightweight initial feature extraction
-#   - [-1, 1, DWConv, [128, 3, 2]] # 1-P2/4: Depthwise Convolution for efficient downsampling
-#   - [-1, 3, GhostC2fskip, [128, True]] # Use Ghost Convolutions in C2f for feature richness
-#   - [-1, 1, DWConv, [256, 3, 2]] # 3-P3/8: Depthwise Convolution for efficient downsampling
-#   - [-1, 6, GhostC2fskip, [256, True]] # Ghost Convolutions in C2f for lightweight feature extraction
-#   - [-1, 1, DWConv, [512, 3, 2]] # 5-P4/16: Depthwise Convolution for downsampling
-#   - [-1, 6, GhostC2fskip, [512, True]] # Ghost Convolutions in C2f for richer mid-level features
-#   - [-1, 1, DWConv, [1024, 3, 2]] # 7-P5/32: Depthwise Convolution for efficient downsampling
-#   - [-1, 3, GhostC2fskip, [1024, True]] # Ghost Convolutions for high-level features
-#   - [-1, 1, GhostSPPF, [1024, 5]] # 9: Ghost Convolutions in SPPF for high-level feature aggregation
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, DWConv, [64, 3, 2]] # 0-P1/2: Depthwise Convolution for lightweight initial feature extraction
+  - [-1, 1, DWConv, [128, 3, 2]] # 1-P2/4: Depthwise Convolution for efficient downsampling
+  - [-1, 3, GhostC2fskip, [128, True]] # Use Ghost Convolutions in C2f for feature richness
+  - [-1, 1, DWConv, [256, 3, 2]] # 3-P3/8: Depthwise Convolution for efficient downsampling
+  - [-1, 6, GhostC2fskip, [256, True]] # Ghost Convolutions in C2f for lightweight feature extraction
+  - [-1, 1, DWConv, [512, 3, 2]] # 5-P4/16: Depthwise Convolution for downsampling
+  - [-1, 6, GhostC2fskip, [512, True]] # Ghost Convolutions in C2f for richer mid-level features
+  - [-1, 1, DWConv, [1024, 3, 2]] # 7-P5/32: Depthwise Convolution for efficient downsampling
+  - [-1, 3, GhostC2fskip, [1024, True]] # Ghost Convolutions for high-level features
+  - [-1, 1, GhostSPPF, [1024, 5]] # 9: Ghost Convolutions in SPPF for high-level feature aggregation
 
 
-# head:
-#   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
-#   - [[-1, 6], 1, Concat, [1]] # cat backbone P4
-#   - [-1, 3, GhostC2f, [512]] # 12: Ghost Convolutions for lightweight feature processing
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 6], 1, Concat, [1]] # cat backbone P4
+  - [-1, 3, GhostC2f, [512]] # 12: Ghost Convolutions for lightweight feature processing
 
-#   - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
-#   - [[-1, 4], 1, Concat, [1]] # cat backbone P3
-#   - [-1, 3, GhostC2f, [256]] # 15: Ghost Convolutions for small-scale features (P3/8-small)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 4], 1, Concat, [1]] # cat backbone P3
+  - [-1, 3, GhostC2f, [256]] # 15: Ghost Convolutions for small-scale features (P3/8-small)
 
-#   - [-1, 1, DWConv, [256, 3, 2]] # Depthwise Convolution for efficient downsampling
-#   - [[-1, 12], 1, Concat, [1]] # cat head P4
-#   - [-1, 3, GhostC2f, [512]] # 18: Ghost Convolutions for medium-scale features (P4/16-medium)
+  - [-1, 1, DWConv, [256, 3, 2]] # Depthwise Convolution for efficient downsampling
+  - [[-1, 12], 1, Concat, [1]] # cat head P4
+  - [-1, 3, GhostC2f, [512]] # 18: Ghost Convolutions for medium-scale features (P4/16-medium)
 
-#   - [-1, 1, DWConv, [512, 3, 2]] # Depthwise Convolution for efficient downsampling
-#   - [[-1, 9], 1, Concat, [1]] # cat head P5
-#   - [-1, 3, GhostC2f, [1024]] # 21: Ghost Convolutions for large-scale features (P5/32-large)
+  - [-1, 1, DWConv, [512, 3, 2]] # Depthwise Convolution for efficient downsampling
+  - [[-1, 9], 1, Concat, [1]] # cat head P5
+  - [-1, 3, GhostC2f, [1024]] # 21: Ghost Convolutions for large-scale features (P5/32-large)
 
-#   - [[15, 18, 21], 1, Detect, [nc]] # Detect(P3, P4, P5)
+  - [[15, 18, 21], 1, Detect, [nc]] # Detect(P3, P4, P5)
 
 
 
@@ -256,44 +256,3 @@ scales: # model compound scaling constants, i.e. 'model=yolov8n.yaml' will call 
 
 #   - [[15, 18, 21], 1, Detect, [nc]] # Detect(P3, P4, P5)
 
-
-backbone:
-  - [-1, 1, DWConv, [64, 3, 2]]  # 0-P1/2
-  - [-1, 1, DWConv, [128, 3, 2]]  # 1-P2/4
-  - [-1, 3, GhostC2fskip, [128, True]]  # 2: Efficient Ghost Convolutions
-  - [-1, 1, CBAM, [128]]  # Attention to improve seatbelt region focus
-
-  - [-1, 1, DWConv, [256, 3, 2]]  # 3-P3/8
-  - [-1, 6, GhostC2fskip, [256, True]]
-  - [-1, 1, CBAM, [256]]  
-
-  - [-1, 1, DWConv, [512, 3, 2]]  # 5-P4/16
-  - [-1, 6, GhostC2fskip, [512, True]]
-  - [-1, 1, CBAM, [512]]  
-
-  - [-1, 1, DWConv, [1024, 3, 2]]  # 7-P5/32
-  - [-1, 3, GhostC2fskip, [1024, True]]
-  - [-1, 1, SPPF, [1024, 5]]  # Better multi-scale feature aggregation
-  - [-1, 1, CBAM, [1024]]  
-
-neck:
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  
-  - [[-1, 6], 1, Concat, [1]]  
-  - [-1, 3, GhostC2f, [512]]  
-  # - [-1, 1, PAN, [512]]  # PANet for better feature flow
-
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  
-  - [[-1, 4], 1, Concat, [1]]  
-  - [-1, 3, GhostC2f, [256]]  
-  # - [-1, 1, BiFPN, [256]]  # BiFPN improves small object detection
-
-  - [-1, 1, DWConv, [256, 3, 2]]  
-  - [-1, 3, GhostC2f, [512]]  
-  - [-1, 1, PSA, [512,8]]  # Point-wise Spatial Attention
-
-  - [-1, 1, DWConv, [512, 3, 2]]  
-  - [-1, 3, GhostC2f, [1024]]  
-  - [-1, 1, PSA, [1024,8]]  
-
-head:
-  - [[10, 14, 18], 1, Detect, [nc]]  # Detect(P3, P4, P5)
