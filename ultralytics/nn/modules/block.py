@@ -71,11 +71,22 @@ class DFL(nn.Module):
         x = torch.arange(c1, dtype=torch.float)
         self.conv.weight.data[:] = nn.Parameter(x.view(1, c1, 1, 1))
         self.c1 = c1
-
+    
     def forward(self, x):
         """Applies a transformer layer on input tensor 'x' and returns a tensor."""
+    
+        print(f"Debug: x.shape before unpacking: {x.shape}")  # Debugging
+
+        # Check if x has more than 3 dimensions and flatten it
+        if len(x.shape) > 3:
+            x = x.view(x.shape[0], x.shape[1], -1)  # Flatten last dimensions
+
         b, _, a = x.shape  # batch, channels, anchors
         return self.conv(x.view(b, 4, self.c1, a).transpose(2, 1).softmax(1)).view(b, 4, a)
+    # def forward(self, x):
+    #     """Applies a transformer layer on input tensor 'x' and returns a tensor."""
+    #     b, _, a = x.shape  # batch, channels, anchors
+    #     return self.conv(x.view(b, 4, self.c1, a).transpose(2, 1).softmax(1)).view(b, 4, a)
         # return self.conv(x.view(b, self.c1, 4, a).softmax(1)).view(b, 4, a)
 
 
