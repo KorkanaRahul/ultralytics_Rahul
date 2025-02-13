@@ -339,11 +339,11 @@ head:
   - [-1, 1, DWConv, [256, 3, 2]] # Depthwise Convolution
   - [[-1, 12], 1, Concat, [1]] # cat head P4
   - [-1, 3, C3Ghost, [512]] # 18: C3Ghost
-  - [-1, 1, PSA, [512]] # Add PSA
+  - [-1, 1, PSA, [512,8]] # Add PSA
 
   - [-1, 1, DWConv, [512, 3, 2]] # Depthwise Convolution
   - [[-1, 9], 1, Concat, [1]] # cat head P5
   - [-1, 3, C3Ghost, [1024]] # 21: C3Ghost
-  - [-1, 1, PSA, [1024]] # Add PSA
+  - [-1, 1, PSA, [1024,8]] # Add PSA
 
   - [[15, 18, 21], 1, Detect, [nc]] # Detect(P3, P4, P5)
