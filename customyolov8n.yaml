@@ -298,4 +298,4 @@ neck:
   - [-1, 1, PSA, [1024,8]]  
 
 head:
-  - [[12, 16, 20], 1, Detect, [nc]]  # Detect(P3, P4, P5)
+  - [[10, 14, 18], 1, Detect, [nc]]  # Detect(P3, P4, P5)
