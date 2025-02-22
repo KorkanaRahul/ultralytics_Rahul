@@ -75,7 +75,7 @@ class DFL(nn.Module):
     def forward(self, x):
         """Applies a transformer layer on input tensor 'x' and returns a tensor."""
     
-        print(f"Debug: x.shape before unpacking: {x.shape}")  # Debugging
+        # print(f"Debug: x.shape before unpacking: {x.shape}")  # Debugging
 
         # Check if x has more than 3 dimensions and flatten it
         if len(x.shape) > 3:

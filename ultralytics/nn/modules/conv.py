@@ -346,7 +346,7 @@ class Concat(nn.Module):
         # Resize mismatched feature maps
         x = [F.interpolate(t, size=target_size, mode="bilinear", align_corners=False) if t.shape[-2:] != target_size else t for t in x]
 
-        print("Feature map shapes after resizing:", [t.shape for t in x])
+        # print("Feature map shapes after resizing:", [t.shape for t in x])
         return torch.cat(x, self.d)
 
 
