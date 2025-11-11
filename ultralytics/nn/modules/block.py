@@ -56,7 +56,6 @@ __all__ = (
     "PSA",
     "SCDown",
     "TorchVision",
-    "ECA"
 )
 
 

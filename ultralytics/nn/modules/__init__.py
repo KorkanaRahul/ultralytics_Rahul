@@ -110,7 +110,7 @@ __all__ = (
     "CBAM",
     "ECA",#
     "Concat",
-    "WeightedAdd",
+    "WeightedAdd",#
     "TransformerLayer",
     "TransformerBlock",
     "MLPBlock",
@@ -128,7 +128,6 @@ __all__ = (
     "GhostC2f",#
     "GhostC2fskip",#
     "SEBlock",#
-    "ECA",
     "C3k2",
     "SCDown",
     "C2fPSA",
