@@ -25,6 +25,8 @@ __all__ = (
     "GhostC2f",#
     "GhostC2fskip",#
     "SEBlock",#
+    "ECA",#
+    "CBAM",#
     "ImagePoolingAttn",
     "ContrastiveHead",
     "BNContrastiveHead",
@@ -54,6 +56,7 @@ __all__ = (
     "PSA",
     "SCDown",
     "TorchVision",
+    "ECA"
 )
 
 
@@ -348,6 +351,26 @@ class ChannelAttention(nn.Module):
         """Applies forward pass using activation on convolutions of the input, optionally using batch normalization."""
         return x * self.act(self.fc(self.pool(x)))
 
+class ECA(nn.Module):
+    """
+    Efficient Channel Attention (ECA)
+    - input: (B, C, H, W)
+    - output: (B, C, H, W) scaled channels
+    """
+    def __init__(self, channels, k_size=3):
+        super().__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        # 1D conv across channels (k must be odd)
+        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size // 2), bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        # x: B,C,H,W -> y: B,1,C
+        y = self.avg_pool(x)            # B,C,1,1
+        y = y.squeeze(-1).transpose(-1, -2)  # B,1,C
+        y = self.conv(y)                # B,1,C
+        y = self.sigmoid(y).transpose(-1, -2).unsqueeze(-1)  # B,C,1,1
+        return x * y.expand_as(x)
 
 class SpatialAttention(nn.Module):
     """Spatial-attention module."""

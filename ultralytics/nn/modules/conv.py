@@ -18,8 +18,9 @@ __all__ = (
     "GhostConv",
     "ChannelAttention",
     "SpatialAttention",
-    "CBAM",
+    # "CBAM",#
     "Concat",
+    "WeightedAdd",
     "RepConv",
     "Index",
 )
@@ -349,6 +350,25 @@ class Concat(nn.Module):
         # print("Feature map shapes after resizing:", [t.shape for t in x])
         return torch.cat(x, self.d)
 
+
+class WeightedAdd(nn.Module):
+    """
+    BiFPN-style weighted feature fusion
+    """
+    def __init__(self, channels):
+        super().__init__()
+        self.w = nn.Parameter(torch.ones(2))  # weights for two inputs
+        self.eps = 1e-4
+        self.conv = nn.Conv2d(channels, channels, 1, bias=False)
+        self.bn = nn.BatchNorm2d(channels)
+        self.act = nn.SiLU()
+
+    def forward(self, inputs):
+        x1, x2 = inputs
+        w = F.relu(self.w)
+        w = w / (torch.sum(w) + self.eps)
+        fused = w[0] * x1 + w[1] * x2
+        return self.act(self.bn(self.conv(fused)))
 
 class Index(nn.Module):
     """Returns a particular index of the input."""

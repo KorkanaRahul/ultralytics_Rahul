@@ -43,6 +43,7 @@ from .block import (
     GhostC2fskip,#
     SEBlock,#
     CBAM,#
+    ECA,#
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -64,9 +65,10 @@ from .block import (
     TorchVision,
 )
 from .conv import (
-    CBAM,
+    # CBAM,
     ChannelAttention,
     Concat,
+    WeightedAdd,#
     Conv,
     Conv2,
     ConvTranspose,
@@ -106,7 +108,9 @@ __all__ = (
     "ChannelAttention",
     "SpatialAttention",
     "CBAM",
+    "ECA",#
     "Concat",
+    "WeightedAdd",
     "TransformerLayer",
     "TransformerBlock",
     "MLPBlock",
@@ -124,7 +128,7 @@ __all__ = (
     "GhostC2f",#
     "GhostC2fskip",#
     "SEBlock",#
-    "CBAM",#
+    "ECA",
     "C3k2",
     "SCDown",
     "C2fPSA",
