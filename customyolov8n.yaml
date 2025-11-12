@@ -1,7 +1,9 @@
-nc: 1  # number of classes
 activation: nn.ReLU()
+
+# yolov8_eca_bifpn.yaml 
+nc: 1
 depth_multiple: 0.33
-width_multiple: 0.50   # tune 0.45–0.60 for speed/accuracy tradeoff
+width_multiple: 0.50
 
 backbone:
   # [from, n, module, args]
@@ -17,30 +19,29 @@ backbone:
   - [-1, 1, ECA,      [256]]                   # 9
   - [-1, 1, DWConv,   [512, 3, 2]]             # 10-P5/32
   - [-1, 1, GhostC2f, [512, True]]             # 11
-  - [-1, 1, SPPF,     [512, 5]]                # 12 (P5 out)
+  - [-1, 1, ECA,      [512]]                   # 12
+  - [-1, 1, SPPF,     [512, 5]]                # 13: output (P5)
 
+# BiFPN-Lite neck
 head:
-  # Top-down path
-  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 13: up P5->P4
-  - [[-1, 9], 1, Concat, [1]]                  # 14: cat with P4
-  - [-1, 2, GhostC2f, [256]]                   # 15: P4 fused
-  - [-1, 1, ECA,      [256]]                   # 16
+  # Top-down fusion
+  - [[13, 9], 1, WeightedAdd, [256]]           # 14: Fuse P5 & P4
+  - [-1, 1, DWConv, [256, 3, 1]]               # 15
+  - [-1, 1, ECA, [256]]                        # 16
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 17: up -> P3 scale
+  - [[-1, 6], 1, WeightedAdd, [128]]           # 18: Fuse with P3
+  - [-1, 1, DWConv, [128, 3, 1]]               # 19
+  - [-1, 1, ECA, [128]]                        # 20
 
-  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 17: up P4->P3
-  - [[-1, 6], 1, Concat, [1]]                  # 18: cat with P3
-  - [-1, 2, GhostC2f, [128]]                   # 19: P3 fused (head small)
-  - [-1, 1, ECA,      [128]]                   # 20
+  # Bottom-up fusion
+  - [-1, 1, DWConv, [128, 3, 2]]               # 21: down -> P4
+  - [[-1, 16], 1, WeightedAdd, [256]]          # 22: fuse with P4
+  - [-1, 1, DWConv, [256, 3, 1]]               # 23
+  - [-1, 1, ECA, [256]]                        # 24
+  - [-1, 1, DWConv, [256, 3, 2]]               # 25: down -> P5
+  - [[-1, 13], 1, WeightedAdd, [512]]          # 26: fuse with P5
+  - [-1, 1, DWConv, [512, 3, 1]]               # 27
+  - [-1, 1, ECA, [512]]                        # 28
 
-  # Bottom-up path
-  - [-1, 1, DWConv,   [128, 3, 2]]             # 21: down P3->P4
-  - [[-1, 16], 1, Concat, [1]]                 # 22: fuse with P4
-  - [-1, 2, GhostC2f, [256]]                   # 23: P4 refined
-  - [-1, 1, ECA,      [256]]                   # 24
-
-  - [-1, 1, DWConv,   [256, 3, 2]]             # 25: down P4->P5
-  - [[-1, 12], 1, Concat, [1]]                 # 26: fuse with P5
-  - [-1, 2, GhostC2f, [512]]                   # 27: P5 refined
-  - [-1, 1, ECA,      [512]]                   # 28
-
-  # Detect heads on P3, P4, P5
-  - [[20, 24, 28], 1, Detect, [nc]]            # 29: Detect(P3, P4, P5)
+  # Detection heads (3 scales)
+  - [[20, 24, 28], 1, Detect, [nc]]
