@@ -1083,7 +1083,14 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
-            c2 = sum(ch[x] for x in f)
+            c2 = sum(ch[x] for x in f) 
+        # --- ADD THIS NEW BLOCK ---
+        elif m is WeightedAdd:
+            # This tells the parser what the output channels (c2) are
+            # for your WeightedAdd layer. It's the first arg, e.g., [256].
+            c2 = args[0]
+            c2 = make_divisible(min(c2, max_channels) * width, 8)
+        # --- END OF NEW BLOCK ---
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
             if m is Segment:
