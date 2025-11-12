@@ -387,10 +387,10 @@ class ECA(nn.Module):
         t = int(abs((math.log(channels, 2) + 1) / 2))
         k = t if t % 2 else t + 1
         
-        print(f"\n--- ✅ DYNAMIC ECA INITIALIZED ---")
-        print(f"Input channels: {channels}")
-        print(f"Calculated k_size: {k} (This is odd, so it will work)")
-        print(f"----------------------------------\n")
+        # print(f"\n--- ✅ DYNAMIC ECA INITIALIZED ---")
+        # print(f"Input channels: {channels}")
+        # print(f"Calculated k_size: {k} (This is odd, so it will work)")
+        # print(f"----------------------------------\n")
 
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         # 1D conv with our new, correct k_size
