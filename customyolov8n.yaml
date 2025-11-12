@@ -3,7 +3,7 @@ activation: nn.ReLU()
 # yolov8_eca_bifpn.yaml 
 nc: 1
 depth_multiple: 0.33
-width_multiple: 0.50
+# width_multiple: 0.50
 
 backbone:
   # [from, n, module, args]
@@ -22,27 +22,33 @@ backbone:
   - [-1, 1, ECA,      [512]]                   # 12
   - [-1, 1, SPPF,     [512, 5]]                # 13: output (P5)
 
-# BiFPN-Lite neck
 head:
-# Top-down fusion
-- [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 14: NEW - Upsample P5(13) to match P4 size
-- [[-1, 9], 1, WeightedAdd, [256]]           # 15: Fuse upsampled P5 (14) & P4 (9)
-- [-1, 1, DWConv, [256, 3, 1]]               # 16
-- [-1, 1, ECA, [256]]                        # 17
-- [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 18: up -> P3 scale
-- [[-1, 6], 1, WeightedAdd, [128]]           # 19: Fuse with P3 (6)
-- [-1, 1, DWConv, [128, 3, 1]]               # 20
-- [-1, 1, ECA, [128]]                        # 21 (P3 head output)
+# --- Input Projections (Project P3, P4, P5 to a uniform 128-base-channel neck) ---
+# This fixes the channel mismatches.
+# (Scaled channels with 0.5 width_multiple will be 64)
+- [6, 1, Conv, [128, 1, 1]]                 # 14: Project P3(6) (from 128*0.5=64ch) -> 64ch
+- [9, 1, Conv, [128, 1, 1]]                 # 15: Project P4(9) (from 256*0.5=128ch) -> 64ch
+- [13, 1, Conv, [128, 1, 1]]                # 16: Project P5(13) (from 512*0.5=256ch) -> 64ch
 
-# Bottom-up fusion
-- [-1, 1, DWConv, [128, 3, 2]]               # 22: down -> P4
-- [[-1, 17], 1, WeightedAdd, [256]]          # 23: fuse with P4-fused (17)
-- [-1, 1, DWConv, [256, 3, 1]]               # 24
-- [-1, 1, ECA, [256]]                        # 25 (P4 head output)
-- [-1, 1, DWConv, [256, 3, 2]]               # 26: down -> P5
-- [[-1, 13], 1, WeightedAdd, [512]]          # 27: fuse with P5 (13)
-- [-1, 1, DWConv, [512, 3, 1]]               # 28
-- [-1, 1, ECA, [512]]                        # 29 (P5 head output)
+# --- Top-down path (all fusions are now 64ch + 64ch) ---
+- [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 17: Upsample P5_proj(16) to P4 size
+- [[-1, 15], 1, WeightedAdd, [128]]          # 18: Fuse P5_up(17) & P4_proj(15)
+- [-1, 1, DWConv, [128, 3, 1]]               # 19
+- [-1, 1, ECA, [128]]                        # 20 (This is P4_td)
+- [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 21: Upsample P4_td(20) to P3 size
+- [[-1, 14], 1, WeightedAdd, [128]]          # 22: Fuse P4_up(21) & P3_proj(14)
+- [-1, 1, DWConv, [128, 3, 1]]               # 23
+- [-1, 1, ECA, [128]]                        # 24 (This is P3_out, Detect Head 1)
 
-# Detection heads (3 scales)
-- [[21, 25, 29], 1, Detect, [nc]]            # 30: Connect all 3 heads
+# --- Bottom-up path (all fusions are now 64ch + 64ch) ---
+- [-1, 1, DWConv, [128, 3, 2]]               # 25: Downsample P3_out(24) to P4 size
+- [[-1, 20], 1, WeightedAdd, [128]]          # 26: Fuse P3_down(25) & P4_td(20)
+- [-1, 1, DWConv, [128, 3, 1]]               # 27
+- [-1, 1, ECA, [128]]                        # 28 (This is P4_out, Detect Head 2)
+- [-1, 1, DWConv, [128, 3, 2]]               # 29: Downsample P4_out(28) to P5 size
+- [[-1, 16], 1, WeightedAdd, [128]]          # 30: Fuse P4_down(29) & P5_proj(16)
+- [-1, 1, DWConv, [128, 3, 1]]               # 31
+- [-1, 1, ECA, [128]]                        # 32 (This is P5_out, Detect Head 3)
+
+# --- Detection Heads ---
+- [[24, 28, 32], 1, Detect, [nc]]            # 33: Connect all 3 output heads
