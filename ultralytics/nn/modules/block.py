@@ -4,6 +4,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 from ultralytics.utils.torch_utils import fuse_conv_and_bn
 
@@ -350,26 +351,57 @@ class ChannelAttention(nn.Module):
         """Applies forward pass using activation on convolutions of the input, optionally using batch normalization."""
         return x * self.act(self.fc(self.pool(x)))
 
+# class ECA(nn.Module):
+#     """
+#     Efficient Channel Attention (ECA)
+#     - input: (B, C, H, W)
+#     - output: (B, C, H, W) scaled channels
+#     """
+#     def __init__(self, channels, k_size=3):
+#         super().__init__()
+#         print(f"--- ECA INITIALIZED WITH k_size = {k_size} ---")
+#         self.avg_pool = nn.AdaptiveAvgPool2d(1)
+#         # 1D conv across channels (k must be odd)
+#         self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size // 2), bias=False)
+#         self.sigmoid = nn.Sigmoid()
+
+#     def forward(self, x):
+#         # x: B,C,H,W -> y: B,1,C
+#         y = self.avg_pool(x)            # B,C,1,1
+#         y = y.squeeze(-1).transpose(-1, -2)  # B,1,C
+#         y = self.conv(y)                # B,1,C
+#         y = self.sigmoid(y).transpose(-1, -2).unsqueeze(-1)  # B,C,1,1
+#         return x * y.expand_as(x)
+    
+    
 class ECA(nn.Module):
     """
-    Efficient Channel Attention (ECA)
-    - input: (B, C, H, W)
-    - output: (B, C, H, W) scaled channels
+    ECA-Net with Dynamic Kernel Size Calculation
     """
-    def __init__(self, channels, k_size=3):
+    def __init__(self, channels, k_size=None): # k_size is ignored
         super().__init__()
-        print(f"--- ECA INITIALIZED WITH k_size = {k_size} ---")
+        
+        # --- DYNAMIC KERNEL SIZE CALCULATION ---
+        # This is the formula from the ECA-Net paper
+        # k = |(log2(C) + 1) / 2|_odd
+        t = int(abs((math.log(channels, 2) + 1) / 2))
+        k = t if t % 2 else t + 1
+        
+        print(f"\n--- ✅ DYNAMIC ECA INITIALIZED ---")
+        print(f"Input channels: {channels}")
+        print(f"Calculated k_size: {k} (This is odd, so it will work)")
+        print(f"----------------------------------\n")
+
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        # 1D conv across channels (k must be odd)
-        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size // 2), bias=False)
+        # 1D conv with our new, correct k_size
+        self.conv = nn.Conv1d(1, 1, kernel_size=k, padding=(k // 2), bias=False)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # x: B,C,H,W -> y: B,1,C
-        y = self.avg_pool(x)            # B,C,1,1
-        y = y.squeeze(-1).transpose(-1, -2)  # B,1,C
-        y = self.conv(y)                # B,1,C
-        y = self.sigmoid(y).transpose(-1, -2).unsqueeze(-1)  # B,C,1,1
+        y = self.avg_pool(x)                # B,C,1,1
+        y = y.squeeze(-1).transpose(-1, -2) # B,1,C
+        y = self.conv(y)                    # B,1,C (shape preserved)
+        y = self.sigmoid(y).transpose(-1, -2).unsqueeze(-1) # B,C,1,1
         return x * y.expand_as(x)
 
 class SpatialAttention(nn.Module):

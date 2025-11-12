@@ -1,7 +1,7 @@
 # custom_n.yaml (Fixed)
 nc: 1
 depth_multiple: 0.33
-width_multiple: 0.32
+width_multiple: 0.25
 activation: nn.ReLU()
 
 backbone:
