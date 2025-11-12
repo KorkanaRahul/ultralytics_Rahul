@@ -24,24 +24,25 @@ backbone:
 
 # BiFPN-Lite neck
 head:
-  # Top-down fusion
-  - [[13, 9], 1, WeightedAdd, [256]]           # 14: Fuse P5 & P4
-  - [-1, 1, DWConv, [256, 3, 1]]               # 15
-  - [-1, 1, ECA, [256]]                        # 16
-  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 17: up -> P3 scale
-  - [[-1, 6], 1, WeightedAdd, [128]]           # 18: Fuse with P3
-  - [-1, 1, DWConv, [128, 3, 1]]               # 19
-  - [-1, 1, ECA, [128]]                        # 20
+# Top-down fusion
+- [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 14: NEW - Upsample P5(13) to match P4 size
+- [[-1, 9], 1, WeightedAdd, [256]]           # 15: Fuse upsampled P5 (14) & P4 (9)
+- [-1, 1, DWConv, [256, 3, 1]]               # 16
+- [-1, 1, ECA, [256]]                        # 17
+- [-1, 1, nn.Upsample, [None, 2, 'nearest']]    # 18: up -> P3 scale
+- [[-1, 6], 1, WeightedAdd, [128]]           # 19: Fuse with P3 (6)
+- [-1, 1, DWConv, [128, 3, 1]]               # 20
+- [-1, 1, ECA, [128]]                        # 21 (P3 head output)
 
-  # Bottom-up fusion
-  - [-1, 1, DWConv, [128, 3, 2]]               # 21: down -> P4
-  - [[-1, 16], 1, WeightedAdd, [256]]          # 22: fuse with P4
-  - [-1, 1, DWConv, [256, 3, 1]]               # 23
-  - [-1, 1, ECA, [256]]                        # 24
-  - [-1, 1, DWConv, [256, 3, 2]]               # 25: down -> P5
-  - [[-1, 13], 1, WeightedAdd, [512]]          # 26: fuse with P5
-  - [-1, 1, DWConv, [512, 3, 1]]               # 27
-  - [-1, 1, ECA, [512]]                        # 28
+# Bottom-up fusion
+- [-1, 1, DWConv, [128, 3, 2]]               # 22: down -> P4
+- [[-1, 17], 1, WeightedAdd, [256]]          # 23: fuse with P4-fused (17)
+- [-1, 1, DWConv, [256, 3, 1]]               # 24
+- [-1, 1, ECA, [256]]                        # 25 (P4 head output)
+- [-1, 1, DWConv, [256, 3, 2]]               # 26: down -> P5
+- [[-1, 13], 1, WeightedAdd, [512]]          # 27: fuse with P5 (13)
+- [-1, 1, DWConv, [512, 3, 1]]               # 28
+- [-1, 1, ECA, [512]]                        # 29 (P5 head output)
 
-  # Detection heads (3 scales)
-  - [[20, 24, 28], 1, Detect, [nc]]
+# Detection heads (3 scales)
+- [[21, 25, 29], 1, Detect, [nc]]            # 30: Connect all 3 heads
