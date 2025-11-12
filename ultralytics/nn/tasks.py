@@ -996,7 +996,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             SEBlock,#
             CBAM,#
             ECA,#
-            WeightedAdd,#
+            # WeightedAdd,#
             C3k2,
             RepNCSPELAN4,
             ELAN1,
