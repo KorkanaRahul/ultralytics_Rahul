@@ -358,6 +358,7 @@ class ECA(nn.Module):
     """
     def __init__(self, channels, k_size=3):
         super().__init__()
+        print(f"--- ECA INITIALIZED WITH k_size = {k_size} ---")
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         # 1D conv across channels (k must be odd)
         self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size // 2), bias=False)
