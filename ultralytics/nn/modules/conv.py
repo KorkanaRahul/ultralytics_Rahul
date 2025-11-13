@@ -20,7 +20,7 @@ __all__ = (
     "SpatialAttention",
     # "CBAM",#
     "Concat",
-    "WeightedAdd",
+    "WeightedAdd",#
     "RepConv",
     "Index",
 )
@@ -363,8 +363,22 @@ class WeightedAdd(nn.Module):
         self.bn = nn.BatchNorm2d(channels)
         self.act = nn.SiLU()
 
+    # def forward(self, inputs):
+    #     x1, x2 = inputs
+    #     w = F.relu(self.w)
+    #     w = w / (torch.sum(w) + self.eps)
+    #     fused = w[0] * x1 + w[1] * x2
+    #     return self.act(self.bn(self.conv(fused)))
+    
     def forward(self, inputs):
         x1, x2 = inputs
+
+        # --- ADD THIS RESIZING LOGIC ---
+        if x1.shape != x2.shape:
+            # Resize x1 to match x2's spatial dimensions (H, W)
+            x1 = F.interpolate(x1, size=x2.shape[2:], mode='nearest')
+        # --- END NEW LOGIC ---
+
         w = F.relu(self.w)
         w = w / (torch.sum(w) + self.eps)
         fused = w[0] * x1 + w[1] * x2
