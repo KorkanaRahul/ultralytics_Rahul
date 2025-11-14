@@ -326,18 +326,38 @@ class GhostC2fskip(nn.Module):
 # ---------------------------------
 # Efficient Channel Attention (ECA)
 # ---------------------------------
+# class ECA(nn.Module):
+#     def __init__(self, channels, k_size=3):
+#         super().__init__()
+#         self.avg_pool = nn.AdaptiveAvgPool2d(1)
+#         self.conv = nn.Conv1d(1, 1, kernel_size=k_size,
+#                               padding=k_size // 2, bias=False)
+#         self.sigmoid = nn.Sigmoid()
+
+#     def forward(self, x):
+#         y = self.avg_pool(x)
+#         y = self.conv(y.squeeze(-1).transpose(-1, -2))
+#         y = self.sigmoid(y.transpose(-1, -2).unsqueeze(-1))
+#         return x * y.expand_as(x)
+
 class ECA(nn.Module):
-    def __init__(self, channels, k_size=3):
+    def __init__(self, k_size=3):
         super().__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.conv = nn.Conv1d(1, 1, kernel_size=k_size,
-                              padding=k_size // 2, bias=False)
-        self.sigmoid = nn.Sigmoid()
+        self.k_size = k_size  # store for later
 
     def forward(self, x):
+        b, c, _, _ = x.size()
+
+        # dynamic 1D conv based on current channel count
+        conv = nn.Conv1d(
+            1, 1, kernel_size=self.k_size,
+            padding=self.k_size // 2, bias=False
+        ).to(x.device)
+
         y = self.avg_pool(x)
-        y = self.conv(y.squeeze(-1).transpose(-1, -2))
-        y = self.sigmoid(y.transpose(-1, -2).unsqueeze(-1))
+        y = conv(y.squeeze(-1).transpose(-1, -2))
+        y = torch.sigmoid(y.transpose(-1, -2).unsqueeze(-1))
         return x * y.expand_as(x)
 
 # ---------------------------------

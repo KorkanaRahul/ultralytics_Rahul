@@ -13,16 +13,16 @@ backbone:
   - [-1, 1, Conv, [3, 32, 3, 2]]             # 0-P1/2
   - [-1, 1, DWConv, [32, 64, 3, 2]]          # 1-P2/4
   - [-1, 2, GhostC2f, [64, True]]            # 2
-  - [-1, 1, ECA, [64]]                       # 3
+  - [-1, 1, ECA, []]                       # 3
   - [-1, 1, DWConv, [64, 128, 3, 2]]         # 4-P3/8
   - [-1, 3, GhostC2f, [128, True]]           # 5
-  - [-1, 1, ECA, [128]]                      # 6
+  - [-1, 1, ECA, []]                      # 6
   - [-1, 1, DWConv, [128, 256, 3, 2]]        # 7-P4/16
   - [-1, 3, GhostC2f, [256, True]]           # 8
-  - [-1, 1, ECA, [256]]                      # 9
+  - [-1, 1, ECA, []]                      # 9
   - [-1, 1, DWConv, [256, 512, 3, 2]]        # 10-P5/32
   - [-1, 1, GhostC2f, [512, True]]           # 11
-  - [-1, 1, ECA, [512]]                      # 12
+  - [-1, 1, ECA, []]                      # 12
   - [-1, 1, SPPF, [512, 5]]                  # 13
 
 head:
@@ -30,12 +30,12 @@ head:
   
   # Top-down fusion (P5 + P4)
   - [[13, 9], 1, WeightedAdd, [256]]
-  - [-1, 1, ECA, [256]]
+  - [-1, 1, ECA, []]
   - [-1, 1, nn.Upsample, [None, 2, 'nearest']]
 
   # Add P3
   - [[-1, 6], 1, WeightedAdd, [128]]
-  - [-1, 1, ECA, [128]]
+  - [-1, 1, ECA, []]
 
   # RAMA Fusion (P3, P4, P5 dynamic weighting)
   - [[6, 9, 12], 1, ResolutionAwareFusion, [128]]
