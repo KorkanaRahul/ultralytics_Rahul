@@ -997,7 +997,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             SEBlock,#
             CBAM,#
             ECA,#
-            ResolutionAwareFusion,#
+            # ResolutionAwareFusion,#
             C3k2,
             RepNCSPELAN4,
             ELAN1,
@@ -1092,6 +1092,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[0]
             c2 = make_divisible(min(c2, max_channels) * width, 8)
         # --- END OF NEW BLOCK ---
+        elif m is ResolutionAwareFusion:
+            # RAMA takes multiple feature maps
+            # args[0] = output channels (e.g. 128)
+            # append list of input channels to args
+            args.append([ch[x] for x in f])
+            c2 = args[0]  # output channels
         elif m in frozenset({Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}):
             args.append([ch[x] for x in f])
             if m is Segment:
