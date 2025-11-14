@@ -44,6 +44,8 @@ from .block import (
     SEBlock,#
     CBAM,#
     ECA,#
+    WeightedAdd,#
+    ResolutionAwareFusion,#
     C2fCIB,
     C2fPSA,
     C3Ghost,
@@ -68,7 +70,6 @@ from .conv import (
     # CBAM,
     ChannelAttention,
     Concat,
-    WeightedAdd,#
     Conv,
     Conv2,
     ConvTranspose,
@@ -109,6 +110,7 @@ __all__ = (
     "SpatialAttention",
     "CBAM",
     "ECA",#
+    "ResolutionAwareFusion",#
     "Concat",
     "WeightedAdd",#
     "TransformerLayer",

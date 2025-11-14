@@ -28,6 +28,8 @@ __all__ = (
     "SEBlock",#
     "ECA",#
     "CBAM",#
+    "ResolutionAwareFusion",#
+    "WeightedAdd",#
     "ImagePoolingAttn",
     "ContrastiveHead",
     "BNContrastiveHead",
@@ -319,6 +321,82 @@ class GhostC2fskip(nn.Module):
         y = list(self.cv1(x).split((self.c, self.c), 1))  # Split input into two parts
         y.extend(m(y[-1]) for m in self.m)  # Apply GhostBottleneck layers
         return self.cv2(torch.cat(y, 1))  # Concatenate and process with GhostConv
+    
+
+# # ---------------------------------
+# # Efficient Channel Attention (ECA)
+# # ---------------------------------
+# class ECA(nn.Module):
+#     def __init__(self, channels, k_size=3):
+#         super().__init__()
+#         self.avg_pool = nn.AdaptiveAvgPool2d(1)
+#         self.conv = nn.Conv1d(1, 1, kernel_size=k_size,
+#                               padding=k_size // 2, bias=False)
+#         self.sigmoid = nn.Sigmoid()
+
+#     def forward(self, x):
+#         y = self.avg_pool(x)
+#         y = self.conv(y.squeeze(-1).transpose(-1, -2))
+#         y = self.sigmoid(y.transpose(-1, -2).unsqueeze(-1))
+#         return x * y.expand_as(x)
+
+# # ---------------------------------
+# # Standard WeightedAdd (BiFPN-lite)
+# # ---------------------------------
+# class WeightedAdd(nn.Module):
+#     def __init__(self, channels):
+#         super().__init__()
+#         self.w = nn.Parameter(torch.ones(2))
+#         self.eps = 1e-4
+#         self.conv = nn.Conv2d(channels, channels, 1, bias=False)
+#         self.bn = nn.BatchNorm2d(channels)
+#         self.act = nn.SiLU()
+
+#     def forward(self, inputs):
+#         x1, x2 = inputs
+#         w = F.relu(self.w)
+#         w = w / (torch.sum(w) + self.eps)
+#         fused = w[0] * x1 + w[1] * x2
+#         return self.act(self.bn(self.conv(fused)))
+
+# # ---------------------------------
+# # RAMA: Resolution-Aware Multi-Scale Fusion
+# # ---------------------------------
+# class ResolutionAwareFusion(nn.Module):
+#     """
+#     Fuses 3 feature maps with adaptive per-image weighting
+#     based on image quality/clarity.
+#     """
+#     def __init__(self, channels):
+#         super().__init__()
+#         self.pool = nn.AdaptiveAvgPool2d(1)
+#         self.fc = nn.Sequential(
+#             nn.Linear(channels, 32),
+#             nn.SiLU(),
+#             nn.Linear(32, 3),  # weights for P3, P4, P5
+#             nn.Sigmoid()
+#         )
+#         self.conv = nn.Conv2d(channels, channels, 1, bias=False)
+#         self.bn = nn.BatchNorm2d(channels)
+#         self.act = nn.SiLU()
+
+#     def forward(self, inputs):
+#         P3, P4, P5 = inputs
+
+#         # Image quality descriptor from P3 (fine features)
+#         q = self.pool(P3)
+#         q = q.view(q.size(0), -1)
+#         w = self.fc(q)
+
+#         # Normalize weights
+#         w = w / (w.sum(dim=1, keepdim=True) + 1e-6)
+
+#         w3 = w[:, 0].view(-1, 1, 1, 1)
+#         w4 = w[:, 1].view(-1, 1, 1, 1)
+#         w5 = w[:, 2].view(-1, 1, 1, 1)
+
+#         fused = w3 * P3 + w4 * P4 + w5 * P5
+#         return self.act(self.bn(self.conv(fused)))
 
 class SEBlock(nn.Module):
     def __init__(self, channel, reduction=16):
@@ -403,6 +481,63 @@ class ECA(nn.Module):
         y = self.conv(y)                    # B,1,C (shape preserved)
         y = self.sigmoid(y).transpose(-1, -2).unsqueeze(-1) # B,C,1,1
         return x * y.expand_as(x)
+    
+class WeightedAdd(nn.Module):
+    """
+    BiFPN-style weighted feature fusion
+    """
+    def __init__(self, channels):
+        super().__init__()
+        self.w = nn.Parameter(torch.ones(2))  # weights for two inputs
+        self.eps = 1e-4
+        self.conv = nn.Conv2d(channels, channels, 1, bias=False)
+        self.bn = nn.BatchNorm2d(channels)
+        self.act = nn.SiLU()
+
+    # def forward(self, inputs):
+    #     x1, x2 = inputs
+    #     w = F.relu(self.w)
+    #     w = w / (torch.sum(w) + self.eps)
+    #     fused = w[0] * x1 + w[1] * x2
+    #     return self.act(self.bn(self.conv(fused)))
+    
+    def forward(self, inputs):
+        x1, x2 = inputs
+
+        # --- ADD THIS RESIZING LOGIC ---
+        if x1.shape != x2.shape:
+            # Resize x1 to match x2's spatial dimensions (H, W)
+            x1 = F.interpolate(x1, size=x2.shape[2:], mode='nearest')
+        # --- END NEW LOGIC ---
+
+        w = F.relu(self.w)
+        w = w / (torch.sum(w) + self.eps)
+        fused = w[0] * x1 + w[1] * x2
+        return self.act(self.bn(self.conv(fused)))
+    
+class ResolutionAwareFusion(nn.Module):
+    """
+    Adaptive feature fusion based on image resolution/quality
+    """
+    def __init__(self, channels):
+        super().__init__()
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(channels, 3),
+            nn.Sigmoid()
+        )
+        self.conv = nn.Conv2d(channels, channels, 1, bias=False)
+        self.bn = nn.BatchNorm2d(channels)
+        self.act = nn.SiLU()
+
+    def forward(self, x):
+        # x assumed to be [P3, P4, P5]
+        P3, P4, P5 = x
+        quality = self.pool(P3)  # could also use original input feature
+        w = self.fc(quality.squeeze(-1).squeeze(-1))
+        w = w / (torch.sum(w, dim=1, keepdim=True) + 1e-6)
+        out = w[:,0:1,None,None] * P3 + w[:,1:2,None,None] * P4 + w[:,2:3,None,None] * P5
+        return self.act(self.bn(self.conv(out)))
 
 class SpatialAttention(nn.Module):
     """Spatial-attention module."""
