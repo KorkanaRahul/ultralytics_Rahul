@@ -382,19 +382,68 @@ class WeightedAdd(nn.Module):
 # ---------------------------------
 # RAMA: Resolution-Aware Multi-Scale Fusion
 # ---------------------------------
+# class ResolutionAwareFusion(nn.Module):
+#     def __init__(self, out_ch, in_ch_list):
+#         super().__init__()
+#         self.out_ch = out_ch
+
+#         # Expecting 3 inputs (P3, P4, P5)
+#         c3, c4, c5 = in_ch_list
+
+#         # 1x1 conv to align channels
+#         self.p3c = nn.Conv2d(c3, out_ch, 1, bias=False)
+#         self.p4c = nn.Conv2d(c4, out_ch, 1, bias=False)
+#         self.p5c = nn.Conv2d(c5, out_ch, 1, bias=False)
+
+#         self.pool = nn.AdaptiveAvgPool2d(1)
+#         self.fc = nn.Sequential(
+#             nn.Linear(out_ch, 32),
+#             nn.SiLU(),
+#             nn.Linear(32, 3),
+#             nn.Sigmoid()
+#         )
+
+#         self.out_conv = nn.Conv2d(out_ch, out_ch, 1, bias=False)
+#         self.out_bn = nn.BatchNorm2d(out_ch)
+#         self.out_act = nn.SiLU()
+
+#     def forward(self, inputs):
+#         P3, P4, P5 = inputs
+
+#         P3 = self.p3c(P3)
+#         P4 = self.p4c(P4)
+#         P5 = self.p5c(P5)
+
+#         q = self.pool(P3).view(P3.size(0), -1)
+#         w = self.fc(q)
+#         w = w / (w.sum(dim=1, keepdim=True) + 1e-6)
+
+#         w3 = w[:, 0].view(-1, 1, 1, 1)
+#         w4 = w[:, 1].view(-1, 1, 1, 1)
+#         w5 = w[:, 2].view(-1, 1, 1, 1)
+
+#         fused = w3 * P3 + w4 * P4 + w5 * P5
+#         return self.out_act(self.out_bn(self.out_conv(fused)))
+
 class ResolutionAwareFusion(nn.Module):
+    """
+    RAMA: Resolution-Aware Multi-Scale Attention Fusion
+    Accepts P3, P4, P5 of ANY resolution.
+    Ensures stable fusion by upsampling to P3 resolution.
+    """
     def __init__(self, out_ch, in_ch_list):
         super().__init__()
         self.out_ch = out_ch
 
-        # Expecting 3 inputs (P3, P4, P5)
+        # Input channels from YAML parser
         c3, c4, c5 = in_ch_list
 
-        # 1x1 conv to align channels
+        # Align channels
         self.p3c = nn.Conv2d(c3, out_ch, 1, bias=False)
         self.p4c = nn.Conv2d(c4, out_ch, 1, bias=False)
         self.p5c = nn.Conv2d(c5, out_ch, 1, bias=False)
 
+        # Resolution-aware attention
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Linear(out_ch, 32),
@@ -403,6 +452,7 @@ class ResolutionAwareFusion(nn.Module):
             nn.Sigmoid()
         )
 
+        # Output smoothing
         self.out_conv = nn.Conv2d(out_ch, out_ch, 1, bias=False)
         self.out_bn = nn.BatchNorm2d(out_ch)
         self.out_act = nn.SiLU()
@@ -410,10 +460,27 @@ class ResolutionAwareFusion(nn.Module):
     def forward(self, inputs):
         P3, P4, P5 = inputs
 
+        # -----------------------------
+        # 1) UPSAMPLE P4 & P5 TO MATCH P3
+        # -----------------------------
+        target_size = P3.shape[-2:]  # H,W of P3
+
+        if P4.shape[-1] != target_size[1]:
+            P4 = F.interpolate(P4, size=target_size, mode='nearest')
+
+        if P5.shape[-1] != target_size[1]:
+            P5 = F.interpolate(P5, size=target_size, mode='nearest')
+
+        # -----------------------------
+        # 2) ALIGN CHANNELS
+        # -----------------------------
         P3 = self.p3c(P3)
         P4 = self.p4c(P4)
         P5 = self.p5c(P5)
 
+        # -----------------------------
+        # 3) COMPUTE RESOLUTION-AWARE WEIGHTS
+        # -----------------------------
         q = self.pool(P3).view(P3.size(0), -1)
         w = self.fc(q)
         w = w / (w.sum(dim=1, keepdim=True) + 1e-6)
@@ -422,7 +489,14 @@ class ResolutionAwareFusion(nn.Module):
         w4 = w[:, 1].view(-1, 1, 1, 1)
         w5 = w[:, 2].view(-1, 1, 1, 1)
 
+        # -----------------------------
+        # 4) FUSE SCALED FEATURES
+        # -----------------------------
         fused = w3 * P3 + w4 * P4 + w5 * P5
+
+        # -----------------------------
+        # 5) OUTPUT CONV + BN + ACTIVATION
+        # -----------------------------
         return self.out_act(self.out_bn(self.out_conv(fused)))
 
 class SEBlock(nn.Module):
