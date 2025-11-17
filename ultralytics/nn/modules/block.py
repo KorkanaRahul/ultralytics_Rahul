@@ -344,21 +344,33 @@ class ECA(nn.Module):
     def __init__(self, k_size=3):
         super().__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.k_size = k_size  # store for later
+
+        # Register Conv1d ONCE (not inside forward)
+        self.conv = nn.Conv1d(
+            in_channels=1,
+            out_channels=1,
+            kernel_size=k_size,
+            padding=k_size // 2,
+            bias=False
+        )
 
     def forward(self, x):
-        b, c, _, _ = x.size()
-
-        # dynamic 1D conv based on current channel count
-        conv = nn.Conv1d(
-            1, 1, kernel_size=self.k_size,
-            padding=self.k_size // 2, bias=False
-        ).to(x.device)
+        # convert input to float32 for numerical stability / AMP safety
+        dtype = x.dtype  # original type (FP16 or FP32)
 
         y = self.avg_pool(x)
-        y = conv(y.squeeze(-1).transpose(-1, -2))
-        y = torch.sigmoid(y.transpose(-1, -2).unsqueeze(-1))
+
+        # Shape: (B, C, 1, 1) -> (B, 1, C)
+        y = y.squeeze(-1).transpose(-1, -2).float()
+
+        # Run Conv1d in float32
+        y = self.conv(y)
+
+        # Back to original dtype (FP16 if AMP enabled)
+        y = torch.sigmoid(y).transpose(-1, -2).unsqueeze(-1).to(dtype)
+
         return x * y.expand_as(x)
+
 
 # ---------------------------------
 # Standard WeightedAdd (BiFPN-lite)
