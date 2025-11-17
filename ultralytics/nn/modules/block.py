@@ -363,21 +363,21 @@ class ECA(nn.Module):
 # ---------------------------------
 # Standard WeightedAdd (BiFPN-lite)
 # ---------------------------------
-class WeightedAdd(nn.Module):
-    def __init__(self, channels):
-        super().__init__()
-        self.w = nn.Parameter(torch.ones(2))
-        self.eps = 1e-4
-        self.conv = nn.Conv2d(channels, channels, 1, bias=False)
-        self.bn = nn.BatchNorm2d(channels)
-        self.act = nn.SiLU()
+# class WeightedAdd(nn.Module):
+#     def __init__(self, channels):
+#         super().__init__()
+#         self.w = nn.Parameter(torch.ones(2))
+#         self.eps = 1e-4
+#         self.conv = nn.Conv2d(channels, channels, 1, bias=False)
+#         self.bn = nn.BatchNorm2d(channels)
+#         self.act = nn.SiLU()
 
-    def forward(self, inputs):
-        x1, x2 = inputs
-        w = F.relu(self.w)
-        w = w / (torch.sum(w) + self.eps)
-        fused = w[0] * x1 + w[1] * x2
-        return self.act(self.bn(self.conv(fused)))
+#     def forward(self, inputs):
+#         x1, x2 = inputs
+#         w = F.relu(self.w)
+#         w = w / (torch.sum(w) + self.eps)
+#         fused = w[0] * x1 + w[1] * x2
+#         return self.act(self.bn(self.conv(fused)))
 
 # ---------------------------------
 # RAMA: Resolution-Aware Multi-Scale Fusion
@@ -584,38 +584,44 @@ class ChannelAttention(nn.Module):
 #         y = self.sigmoid(y).transpose(-1, -2).unsqueeze(-1) # B,C,1,1
 #         return x * y.expand_as(x)
     
-# class WeightedAdd(nn.Module):
-#     """
-#     BiFPN-style weighted feature fusion
-#     """
-#     def __init__(self, channels):
-#         super().__init__()
-#         self.w = nn.Parameter(torch.ones(2))  # weights for two inputs
-#         self.eps = 1e-4
-#         self.conv = nn.Conv2d(channels, channels, 1, bias=False)
-#         self.bn = nn.BatchNorm2d(channels)
-#         self.act = nn.SiLU()
+class WeightedAdd(nn.Module):
+    """
+    BiFPN-style weighted feature fusion
+    """
+    def __init__(self, channels):
+        super().__init__()
+        self.w = nn.Parameter(torch.ones(2))  # weights for two inputs
+        self.eps = 1e-4
+        self.conv = nn.Conv2d(channels, channels, 1, bias=False)
+        self.bn = nn.BatchNorm2d(channels)
+        self.act = nn.SiLU()
 
-#     # def forward(self, inputs):
-#     #     x1, x2 = inputs
-#     #     w = F.relu(self.w)
-#     #     w = w / (torch.sum(w) + self.eps)
-#     #     fused = w[0] * x1 + w[1] * x2
-#     #     return self.act(self.bn(self.conv(fused)))
+    # def forward(self, inputs):
+    #     x1, x2 = inputs
+    #     w = F.relu(self.w)
+    #     w = w / (torch.sum(w) + self.eps)
+    #     fused = w[0] * x1 + w[1] * x2
+    #     return self.act(self.bn(self.conv(fused)))
     
-#     def forward(self, inputs):
-#         x1, x2 = inputs
+    def forward(self, inputs):
+        x1, x2 = inputs  # x1, x2 could have small shape differences
+        # normalize weights
+        w = F.relu(self.w)
+        w = w / (torch.sum(w) + self.eps)
 
-#         # --- ADD THIS RESIZING LOGIC ---
-#         if x1.shape != x2.shape:
-#             # Resize x1 to match x2's spatial dimensions (H, W)
-#             x1 = F.interpolate(x1, size=x2.shape[2:], mode='nearest')
-#         # --- END NEW LOGIC ---
+        # Make sizes match: interpolate the smaller one to the larger spatial size
+        h1, w1 = x1.shape[2], x1.shape[3]
+        h2, w2 = x2.shape[2], x2.shape[3]
+        if (h1, w1) != (h2, w2):
+            target_h = max(h1, h2)
+            target_w = max(w1, w2)
+            if (h1, w1) != (target_h, target_w):
+                x1 = F.interpolate(x1, size=(target_h, target_w), mode='nearest')
+            if (h2, w2) != (target_h, target_w):
+                x2 = F.interpolate(x2, size=(target_h, target_w), mode='nearest')
 
-#         w = F.relu(self.w)
-#         w = w / (torch.sum(w) + self.eps)
-#         fused = w[0] * x1 + w[1] * x2
-#         return self.act(self.bn(self.conv(fused)))
+        fused = w[0] * x1 + w[1] * x2
+        return self.act(self.bn(self.conv(fused)))
     
 # class ResolutionAwareFusion(nn.Module):
 #     """
