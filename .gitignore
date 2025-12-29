@@ -30,6 +30,10 @@ requirements.txt
 setup.py
 ultralytics.egg-info
 customyolov8n_copy.yaml
+Seat_Belt_Pipeline/Inputs
+Seat_Belt_Pipeline/outputs
+Seat_Belt_Pipeline/sbelt
+Seat_Belt_Pipeline/models
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
