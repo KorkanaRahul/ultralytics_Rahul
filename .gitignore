@@ -34,6 +34,9 @@ Seat_Belt_Pipeline/Inputs
 Seat_Belt_Pipeline/outputs
 Seat_Belt_Pipeline/sbelt
 Seat_Belt_Pipeline/models
+Seat_Belt_Pipeline/clips
+Seat_Belt_Pipeline/seatbelt_api.py
+Seat_Belt_Pipeline/splitter.py
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

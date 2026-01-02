@@ -58,7 +58,7 @@ def get_video_writer(cap, output_dir="./outputs/videos", name_prefix="output"):
     fps = cap.get(cv2.CAP_PROP_FPS) or 25
 
     out_path = os.path.join(
-        output_dir, f"{name_prefix}_{int(time.time())}.mp4"
+        output_dir, f"{name_prefix}.mp4"
     )
 
     writer = cv2.VideoWriter(
@@ -68,7 +68,6 @@ def get_video_writer(cap, output_dir="./outputs/videos", name_prefix="output"):
         (w, h)
     )
 
-    print(f"[SAVED] Video -> {out_path}")
     return writer, out_path
 
 def draw_boxes(img, boxes: List[Tuple[int,int,int,int]], color=(0,255,0), label=""):
@@ -300,6 +299,9 @@ def run_on_image(pipeline, source_path, out_path=None):
 
 def run_on_video(pipeline, source_path, out_path=None):
     cap = cv2.VideoCapture(source_path)
+    name = os.path.splitext(os.path.basename(source_path))[0]
+    print(f"Processing video: {source_path}")
+    num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     if not cap.isOpened():
         raise RuntimeError("Cannot open video")
 
@@ -311,19 +313,22 @@ def run_on_video(pipeline, source_path, out_path=None):
             (int(cap.get(3)), int(cap.get(4)))
         )
     else:
-        writer, out_path = get_video_writer(cap, name_prefix="annotated_video")
+        writer, out_path = get_video_writer(cap, name_prefix=f"annotated_{name}")
 
     while cap.isOpened():
         ret, frame = cap.read()
+        print("Progress: "f"{int(cap.get(cv2.CAP_PROP_POS_FRAMES))}/{num_frames}", end='\r')
         if not ret:
             break
 
         annotated = pipeline.process_frame(frame)
         writer.write(annotated)
 
-        cv2.imshow("Video", annotated)
+        # cv2.imshow("Video", annotated)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+        
+    print("Video processing complete.")
 
     cap.release()
     writer.release()
@@ -431,10 +436,7 @@ if __name__ == "__main__":
 
 
 # ## Example command to run on a video:
-# python seatbelt_pipeline.py \
-#   --mode video \
-#   --source /content/drive/MyDrive/input_video.mp4 \
-#   --out /content/drive/MyDrive/output_video.mp4
+# python seatbelt_pipeline.py --mode video --source /content/drive/MyDrive/input_video.mp4 --out /content/drive/MyDrive/output_video.mp4
 
 # ## Example command to run on a webcam stream:
 # python seatbelt_pipeline.py \
